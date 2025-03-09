@@ -31,34 +31,11 @@ class SPSSClone:
     def __init__(self, file):
         try:
             self.data = pd.read_csv(file)
-
-            # Drop ID columns if any
             self.data = self.data.drop(columns=[col for col in self.data.columns if 'id' in col.lower()], errors='ignore')
-
-            # Attempt to fix problematic columns
-            for col in self.data.columns:
-                if self.data[col].dtype == 'object':  # Only process non-numeric columns
-                    try:
-                        # Try converting to datetime
-                        self.data[col] = pd.to_datetime(self.data[col], errors="coerce")
-                        # If successful, skip further conversion
-                        if self.data[col].notna().sum() > 0:
-                            continue
-                    except Exception:
-                        pass
-
-                    try:
-                        # Try converting to numeric
-                        self.data[col] = pd.to_numeric(self.data[col], errors="coerce")
-                        # If successful, skip further conversion
-                        if self.data[col].notna().sum() > 0:
-                            continue
-                    except Exception:
-                        pass
-
-                    # If still object type, convert to category
-                    self.data[col] = self.data[col].astype('category')
-
+            
+            # Convert categorical/object columns to category type
+            for col in self.data.select_dtypes(include=['object']).columns:
+                self.data[col] = self.data[col].astype('category')
         except Exception as e:
             st.error(f"Error loading data: {e}")
             self.data = pd.DataFrame()  # Empty DataFrame in case of failure
